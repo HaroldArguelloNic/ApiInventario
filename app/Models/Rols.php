@@ -9,6 +9,9 @@ class Rols extends Model
 
     protected $fillable = ['name'];
     protected $table = 'rols'; //Aqui puse el nombre porque daba error al ponerle Role la buscaba como roles y es rols
+
+
+
     public function users()
     {
         return $this->hasMany(User::class);

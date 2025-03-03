@@ -69,6 +69,15 @@ class CustomerController extends Controller
         }
     }
 
+    public function getProfile($email)
+    {
+        $customer = Customer::where('email', $email)->first();
+        if ($customer) {
+            return response()->json(['status' => true, 'value' => $customer]);
+        } else {
+            return response()->json(['status' => false, 'message' => 'Customer not found'], 404);
+        }
+    }
     public function update(UpdateCustomerRequest $request, $Customerid)
     {
         try {

@@ -1,11 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Http\Controllers\Responses\ApiResponse;
 use App\Http\Requests\StoreProductsRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -28,7 +28,7 @@ class ProductController extends Controller
                     'price' => $product->price,
                     'stock' => $product->stock,
                     'category_id' => $product->category_id,
-                    'description' => $descripcion,
+                    'description' => $product->description,
                     'active' => $product->active,
                 ];
             });
@@ -42,32 +42,35 @@ class ProductController extends Controller
     public function store(StoreProductsRequest $request)
     {
         try{
-            $valid = Validator::make($request->all(),[
-                'name'=>['required','string','max:50'],
-                'description' =>['string','max:150'],
-                'price'=>['required','numeric'],
-                'stock'=>['required','integer','min:0'],
-                'category_id'=>['required | exists:category,id'],
-                'active'=>['required','boolean'],
+            $Validator = Validator::make($request->all(), [
+                'name'=> ['required','string'],
+                'description' => ['required','string'],
+                'price'=> ['required','numeric'],
+                'stock'=> ['required','integer'],
+                'image_path'=> ['required','string'],
+                'category_id'=> ['required','integer'],
+                'active'=> ['required','boolean'],
             ]);
-            if($valid-> fails()){
+
+            //$validator= request()->validated();
+            if($Validator->fails()){
                 $data=[
                     'message'=>'Error en la validacion de los datos',
-                    'errors' => $valid->errors(),
+                    'errors' => $Validator->errors(),
                     'status' => 400,
                 ];
                 return response()->json($data, 400);
             }
             /* Estructurar los datos */
-                $newProduct = Product::create($request->all());
-        /****        'name' => $request->name,
+                $newProduct = Product::create([
+               'name' => $request->name,
                 'description' => $request->description,
-                'price' => $request->price, // encriptar el password
+                'price' => $request->price,
                 'stock' => $request->stock,
                 'image_path' => $request->image_path,
                 'active' => $request->active,
                 'category_id' => $request->category_id,
-           ***/
+           ]);
 
 
             if(!$newProduct){
@@ -84,7 +87,7 @@ class ProductController extends Controller
             return response()->json($data,201);
         }
         catch (\Exception $exception){
-            return ApiResponse::error('Error',$exception->getMessage(),[] ,500);
+            return ApiResponse::error('Error',$exception->getMessage(),500);
         }
 
     }
@@ -98,7 +101,7 @@ class ProductController extends Controller
            if (!$products) {
                return ApiResponse::NotFound('Product not found', [], 404);
            }
-           $descripcion = $products->categories ? $products->categories->name : "none";
+          // $descripcion = $products->categories ? $products->categories->name : "none";
 
            $data = [
                'id' => $products->id,
@@ -106,8 +109,9 @@ class ProductController extends Controller
                'price' => $products->price,
                'stock' => $products->stock,
                'category_id' => $products->category_id,
-               'description' => $descripcion,
+               'description' => $products->description,
                'active' => $products->active,
+               'image_path' => $products->image_path,
            ];
 
            return ApiResponse::Success('isSuccess', $data, 200);
@@ -116,41 +120,73 @@ class ProductController extends Controller
            return $exception->getMessage();
        }
     }
-
-    public function update(UpdateProductRequest $request, $category_id)
+    //funcion de busqueda de producto
+    public function search(Request $request)
     {
-        try {
-            $product = Product::find($category_id);
-            if (!$product) {
-                return ApiResponse::NotFound('Product not found', [], 404);
-            }
+        $query = Product::query();
 
-            $valid = $request->validated();
-
-            $product->update($valid);
-            $product->save();
-
-            $descripcion = $product->categories ? $product->categories->name : "none";
-
-            // Preparar los datos de respuesta
-            $data = [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'stock' => $product->stock,
-                'category_id' => $product->category_id,
-                'description' => $descripcion,
-                'active' => $product->active,
-                'image_path' => $product->image_path ? asset('storage/' . $product->image_path) : null,
-            ];
-
-            // Devolver respuesta exitosa
-            return ApiResponse::success('Product updated successfully', $data, 200);
-        } catch (\Exception $exception) {
-            // Devolver respuesta de error
-            return ApiResponse::Error('An error occurred while updating the product', [], 500);
+        if ($request->filled('q')) {
+            $q = $request->input('q');
+            $query->where(function ($subQuery) use ($q) {
+                $subQuery->where('name', 'like', "%$q%")
+                    ->orWhere('description', 'like', "%$q%");
+            });
         }
+
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->input('category'));
+        }
+
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->input('price_min'));
+        }
+
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->input('price_max'));
+        }
+
+        return response()->json(['product' => $query->get()]);
     }
+
+    // Actualizar un producto existente
+    public function update(Request $request, $id)
+    {
+        // Validar datos entrantes
+        $validatedData = $request->validate([
+            'name' => 'required|string|min:3|max:255',
+            'description' => 'required|string',
+            'category_id' => 'required|integer|exists:categories,id',
+            'price' => 'required|numeric|min:0.01',
+            'stock' => 'required|integer|min:0',
+            'image_path' => 'nullable|string', // o validar formato si deseas
+            'active' => 'required|boolean',
+        ]);
+        // Buscar producto por id
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Producto no encontrado',
+            ], 404);
+        }
+        // Actualizar datos del producto
+        $product->name = $validatedData['name'];
+        $product->description = $validatedData['description'];
+        $product->category_id = $validatedData['category_id'];
+        $product->price = $validatedData['price'];
+        $product->stock = $validatedData['stock'];
+        $product->image_path = $validatedData['image_path'] ?? $product->image_path;
+        $product->active = $validatedData['active'];
+        $product->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Producto actualizado correctamente',
+            'value' => $product,
+        ]);
+
+    }
+
 
     public function destroy(string $id)
     {

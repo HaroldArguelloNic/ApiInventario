@@ -19,9 +19,9 @@ class DatabaseSeeder extends Seeder
         /**********************************
          * Crea el Primer rol de usuario
          **********************************/
-        Rols::factory()->create([
-            'name' => 'Administrador',
 
+            Rols::factory()->create([
+            'name' => 'Administrador',
        ]);
         /**********************************
          * Crea el primer usuario

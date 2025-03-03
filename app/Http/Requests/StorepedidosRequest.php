@@ -4,15 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-
-class StoreProductsRequest extends FormRequest
+class StorepedidosRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -24,13 +23,6 @@ class StoreProductsRequest extends FormRequest
     {
         return [
             //
-            'name' => ['required','string','max:50'],
-            'description' => ['required','string'],
-            'price' => ['required','numeric'],
-            'stock' => ['required','integer','min:0'],
-            'image_path' => ['required','string'],
-            'active'=> ['required','boolean'],
-            'category_id'=> ['required','integer'],
         ];
     }
 }

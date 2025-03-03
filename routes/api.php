@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PagoController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -35,7 +36,7 @@ Route::prefix('rols')->group(function () {
 });
 
 //rutas de categoria
-Route::prefix('category')->group(function () {
+    Route::prefix('category')->group(function () {
     Route::get('/', [CategoryController::class, 'index']);
     Route::post('/', [CategoryController::class, 'store']);
 });
@@ -51,6 +52,7 @@ Route::prefix('category')->group(function () {
     Route::get('/', [CustomerController::class, 'index']);
     Route::post('/', [CustomerController::class, 'store']);
     Route::get('/{customer}', [CustomerController::class, 'show']);
+    Route::get('/profile/{email}', [CustomerController::class, 'getProfile']);
     Route::put('/{customer}', [CustomerController::class, 'update']);
     Route::delete('/{customer}', [CustomerController::class, 'destroy']);
 });
@@ -59,6 +61,7 @@ Route::prefix('category')->group(function () {
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::post('/store', [ProductController::class, 'store']);
+    Route::get('/products/search', [ProductController::class, 'search']);
     Route::get('/{product}', [ProductController::class, 'show']);
     Route::put('/{product}', [ProductController::class, 'update']);
     Route::delete('/{product}', [ProductController::class, 'destroy']);
@@ -82,3 +85,7 @@ Route::prefix('ticket')->group(function () {
 Route::prefix('upload')->group(function() {
     Route::post('/', [UploadImageController::class, 'store']);
 });
+
+//Rutas Pagos
+
+Route::middleware('auth:sanctum')->post('/procesar-pago',[PagoController::class, 'procesarPago']);
