@@ -59,7 +59,7 @@ class UserController extends Controller
                 ];
                 return response()->json($data, 500,);
             }
-             
+
             $data = [
                 'Usuario' => $newUser,
                 'status' => 201,
@@ -103,6 +103,8 @@ class UserController extends Controller
            if (!Hash::check($loginData['password'], $user->password)) {
                return ApiResponse::NotFound('Password  Failed',[],200);
            }
+            // ✅ Generar token con Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
 
             $role = $user->rols ? $user->rols->name : 'Sin rol asignado';
             $userData = [
@@ -110,6 +112,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'rolDescripcion' => $role,
+                'token' =>$token, //incluir token en respuesta
             ];
             return ApiResponse::Success('Login Successfully', $userData, 201);
 
@@ -131,6 +134,7 @@ class UserController extends Controller
 
             $userList = $users->map(function ($user) {
                 return [
+                    'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'rolDescripcion' => $user->rols->name ?? 'No role assigned',

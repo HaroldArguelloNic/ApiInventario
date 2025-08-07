@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('pagos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders');
-            $table->string('numero_transaccion_netbanking')->nullable();
+            $table->string('numero_transacion_netbanking')->nullable();
             $table->decimal('monto_transferido', 10, 2)->nullable();
             $table->timestamp('fecha_pago')->nullable();
             $table->foreignId('customer_id')->constrained('customers');

@@ -3,12 +3,13 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\Rols;
+use App\Models\Category;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory
  */
-class RolsFactory extends Factory
+
+class CategoriesFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,6 +20,7 @@ class RolsFactory extends Factory
     {
         return [
             'name' => fake() ->name(),
+            'status' => fake() ->boolean,
             //
         ];
     }

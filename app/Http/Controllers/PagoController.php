@@ -7,6 +7,7 @@ use App\Models\Pago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class PagoController extends Controller
 {
@@ -44,7 +45,7 @@ public function procesarPago(Request $request) {
             'monto_transferido'=> ['required',"numeric","min:0.01"],
             'fecha_pago'=> ['required',"date"],
             'customer_id'=> ['required',"integer"],
-            'usuario_verificador_id'=> ['required',"integer"],
+            'usuario_verificador_id'=> ["integer"],
             'comentarios_revision'=> ['nullable',"string"],
 
         ] );
@@ -57,12 +58,12 @@ public function procesarPago(Request $request) {
             ];
             return response()->json($data, 400);
         }
-
+        $fechaPago = Carbon::parse($request['fecha_pago'])->format('Y-m-d H:i:s');
         $newPago = Pago::create([
             'order_id' => $request['order_id'],
             'numero_transacion_netbanking'=> $request['numero_transacion_netbanking'],
             'monto_transferido'=> $request['monto_transferido'],
-            'fecha_pago'=> $request['fecha_pago'],
+            'fecha_pago'=> $fechaPago,
             'customer_id'=> $request['customer_id'],
             'usuario_verificador_id'=> $request['usuario_verificador_id'],
             'comentarios_revision'=> $request['comentarios_revision'],
@@ -116,7 +117,7 @@ public function updatePago(Request $request, string $id) {
             return ApiResponse::NotFound('Pago no encontrado', [],404);
         }
         $data = $request->all();
-        $pago->update($data->only(['comentarios_revision']));
+        $pago->update($request->only(['comentarios_revision']));
         if(!$pago){
             $data=[
                 'message'=>'Error en la actualizacion del producto',
@@ -125,11 +126,14 @@ public function updatePago(Request $request, string $id) {
             return response()->json($data,500);
         }
 
+        DB::commit();
+
     }
-    catch (\Exception $exception){
+    catch (\Exception $exception) {
         DB::rollBack();
         return $exception->getMessage();
     }
+    return ApiResponse::Success('Actualización Exitosa', $data, 200);
 }
 
 }
